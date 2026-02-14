@@ -21,6 +21,7 @@ import CapitalPanel from "@/components/panels/CapitalPanel";
 import TimelinePanel from "@/components/panels/TimelinePanel";
 import ApiKeysPanel from "@/components/panels/ApiKeysPanel";
 import PreflightPanel from "@/components/panels/PreflightPanel";
+import AiModePanel from "@/components/panels/AiModePanel";
 import CandlestickChart from "@/components/charts/CandlestickChart";
 import DepthChart from "@/components/charts/DepthChart";
 import MiniChart from "@/components/charts/MiniChart";
@@ -134,6 +135,7 @@ export default function HudGrid() {
         <div className="hud-grid-section hud-grid-section--config">
           <div className="hud-grid-section-label">SYSTEM CONFIGURATION</div>
           <div className="hud-grid-row">
+            <AiModePanel />
             <ApiKeysPanel />
             <PreflightPanel />
           </div>
