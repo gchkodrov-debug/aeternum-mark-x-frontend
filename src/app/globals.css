@@ -853,3 +853,290 @@ html, body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   HUD GRID PANELS - 18-Panel Trading Dashboard
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── HUD Grid Layout ─────────────────────────────────── */
+.hud-grid {
+  width: 100%;
+  padding: 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hud-grid-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hud-grid-section-label {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--accent-dim);
+  padding: 0 4px;
+  text-transform: uppercase;
+}
+
+.hud-grid-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+@media (max-width: 1400px) {
+  .hud-grid-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .hud-grid-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── HUD Panel Card ──────────────────────────────────── */
+.hud-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  max-height: 400px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hud-panel:hover {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 12px var(--accent-glow), inset 0 0 12px rgba(0, 195, 255, 0.02);
+}
+
+/* ── Panel Header ────────────────────────────────────── */
+.hud-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 195, 255, 0.03);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.hud-panel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.hud-panel-dot[data-status="active"] {
+  background: var(--accent-secondary);
+  box-shadow: 0 0 6px var(--accent-secondary);
+}
+
+.hud-panel-dot[data-status="loading"] {
+  background: var(--accent-warning);
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+  animation: pulse 1.5s infinite;
+}
+
+.hud-panel-dot[data-status="error"] {
+  background: var(--accent-danger);
+  box-shadow: 0 0 6px rgba(255, 51, 85, 0.4);
+}
+
+.hud-panel-title {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent);
+  flex: 1;
+}
+
+.hud-panel-time {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+/* ── Panel Body ──────────────────────────────────────── */
+.hud-panel-body {
+  flex: 1;
+  padding: 10px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+/* ── Metric Row ──────────────────────────────────────── */
+.hud-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.hud-metric:last-child {
+  border-bottom: none;
+}
+
+.hud-metric-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.hud-metric-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-dim);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.hud-metric-value--positive {
+  color: var(--accent-secondary) !important;
+}
+
+.hud-metric-value--negative {
+  color: var(--accent-danger) !important;
+}
+
+.hud-metric-value--warning {
+  color: var(--accent-warning) !important;
+}
+
+/* ── Progress Bar ────────────────────────────────────── */
+.hud-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  gap: 1px;
+}
+
+.hud-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+  min-width: 1px;
+  background: var(--accent);
+}
+
+/* ── Tags / Badges ───────────────────────────────────── */
+.hud-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.hud-tag--bullish {
+  color: var(--accent-secondary);
+  border-color: rgba(0, 255, 136, 0.3);
+  background: rgba(0, 255, 136, 0.08);
+}
+
+.hud-tag--bearish {
+  color: var(--accent-danger);
+  border-color: rgba(255, 51, 85, 0.3);
+  background: rgba(255, 51, 85, 0.08);
+}
+
+.hud-tag--neutral {
+  color: var(--accent-warning);
+  border-color: rgba(255, 170, 0, 0.3);
+  background: rgba(255, 170, 0, 0.08);
+}
+
+/* ── List ────────────────────────────────────────────── */
+.hud-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.hud-list-item {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  padding: 3px 6px;
+  background: rgba(0, 195, 255, 0.03);
+  border-left: 2px solid var(--border-color);
+  border-radius: 0 2px 2px 0;
+  line-height: 1.4;
+}
+
+.hud-list-item strong {
+  color: var(--accent-dim);
+}
+
+/* ── Gate Status (RiskGuardian) ───────────────────────── */
+.hud-gate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  border: 1px solid;
+  margin: 2px;
+}
+
+.hud-gate--pass {
+  color: var(--accent-secondary);
+  border-color: rgba(0, 255, 136, 0.25);
+  background: rgba(0, 255, 136, 0.06);
+}
+
+.hud-gate--fail {
+  color: var(--accent-danger);
+  border-color: rgba(255, 51, 85, 0.25);
+  background: rgba(255, 51, 85, 0.06);
+}
+
+.hud-gate--warn {
+  color: var(--accent-warning);
+  border-color: rgba(255, 170, 0, 0.25);
+  background: rgba(255, 170, 0, 0.06);
+}
+
+/* ── HUD Grid Container Override ─────────────────────── */
+.container.hud-mode {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.container.hud-mode .main-content {
+  flex-direction: column;
+  overflow: visible;
+}

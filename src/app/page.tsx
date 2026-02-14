@@ -12,6 +12,7 @@ import Avatar from "@/components/Avatar";
 import AgentPanel from "@/components/AgentPanel";
 import ChatPanel from "@/components/ChatPanel";
 import BottomStrip from "@/components/BottomStrip";
+import HudGrid from "@/components/HudGrid";
 
 export default function Home() {
   const {
@@ -86,6 +87,7 @@ export default function Home() {
               agents={agents}
               onAnalyze={handleAgentAnalyze}
             />
+            <HudGrid />
             <ChatPanel
               messages={messages}
               streamingText={streamingText}
