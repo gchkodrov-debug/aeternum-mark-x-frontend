@@ -1140,3 +1140,33 @@ html, body {
   flex-direction: column;
   overflow: visible;
 }
+
+/* ── Phase 9: Chart Layout ─────────────────────────────── */
+.hud-grid-row--charts {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 6px;
+}
+
+.hud-panel-with-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hud-panel-with-mini > .hud-panel {
+  flex: 1;
+}
+
+.hud-mini-chart-row {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.hud-mini-chart-row canvas {
+  flex: 1;
+}

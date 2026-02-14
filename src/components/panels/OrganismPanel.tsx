@@ -1,128 +1,129 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useOrganismVitals } from "@/hooks/useChartData";
 
-interface PanelData {
-  [key: string]: unknown;
+function CircularGauge({ value, label, color }: { value: number; label: string; color: string }) {
+  const radius = 28;
+  const stroke = 4;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <svg width={72} height={72} viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r={radius} fill="none" stroke="#1a1a1a" strokeWidth={stroke} />
+        <circle
+          cx="36" cy="36" r={radius} fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform="rotate(-90 36 36)"
+          style={{ transition: "stroke-dashoffset 0.5s ease" }}
+        />
+        <text x="36" y="36" textAnchor="middle" dominantBaseline="middle"
+          fill={color} fontSize="12" fontFamily="var(--font-mono)">
+          {value.toFixed(0)}%
+        </text>
+      </svg>
+      <div style={{ fontSize: "9px", color: "#7a8ba0", fontFamily: "var(--font-mono)", marginTop: "-4px" }}>
+        {label}
+      </div>
+    </div>
+  );
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return "—";
-  if (typeof value === "number") {
-    if (Math.abs(value) < 1 && value !== 0) return (value * 100).toFixed(1) + "%";
-    return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  }
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) return value.join(", ");
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
-}
-
-function formatLabel(key: string): string {
-  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function valueClass(value: unknown): string {
-  if (typeof value === "number") {
-    if (value > 0) return "hud-metric-value--positive";
-    if (value < 0) return "hud-metric-value--negative";
-  }
-  return "";
+function formatUptime(seconds: number): string {
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  return `${h}h ${m}m`;
 }
 
 export default function OrganismPanel() {
-  const [data, setData] = useState<PanelData | null>(null);
-  const [status, setStatus] = useState<"active" | "loading" | "error">("loading");
-  const [lastUpdate, setLastUpdate] = useState<string>("");
+  const vitals = useOrganismVitals();
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/aeternum/agents/organism/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ market_data: {} }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setData(json.analysis.data);
-      setStatus("active");
-      setLastUpdate(new Date().toLocaleTimeString());
-    } catch {
-      setStatus("error");
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 8000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
-
-  const healthScore = data && typeof data.health_score === "number" ? data.health_score : null;
+  const status = vitals ? "active" : "loading";
 
   return (
     <div className="hud-panel">
       <div className="hud-panel-header">
         <span className="hud-panel-dot" data-status={status} />
         <span className="hud-panel-title">ORGANISM HEALTH</span>
-        <span className="hud-panel-time">{lastUpdate}</span>
+        {vitals && (
+          <span className="hud-panel-time">⬆ {formatUptime(vitals.uptime_seconds)}</span>
+        )}
       </div>
       <div className="hud-panel-body">
-        {data ? (
+        {vitals ? (
           <>
-            {healthScore !== null && (
-              <>
-                <div className="hud-metric">
-                  <span className="hud-metric-label">Health Score</span>
-                  <span
-                    className={`hud-metric-value ${
-                      healthScore >= 80
-                        ? "hud-metric-value--positive"
-                        : healthScore >= 50
-                        ? "hud-metric-value--warning"
-                        : "hud-metric-value--negative"
-                    }`}
-                  >
-                    {healthScore.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="hud-bar">
-                  <div className="hud-bar-fill" style={{ width: `${healthScore}%` }} />
-                </div>
-              </>
-            )}
-            <div className="hud-list">
-              {Object.entries(data)
-                .filter(([k, v]) => k !== "health_score" && (typeof v !== "object" || v === null))
-                .map(([key, value]) => (
-                  <div key={key} className="hud-metric">
-                    <span className="hud-metric-label">{formatLabel(key)}</span>
-                    <span className={`hud-metric-value ${valueClass(value)}`}>
-                      {formatValue(value)}
-                    </span>
-                  </div>
-                ))}
-              {Object.entries(data)
-                .filter(([, v]) => typeof v === "object" && v !== null && !Array.isArray(v))
-                .map(([key, value]) => (
-                  <div key={key}>
-                    <div className="hud-metric">
-                      <span className="hud-metric-label" style={{ fontWeight: "bold" }}>{formatLabel(key)}</span>
-                    </div>
-                    {Object.entries(value as Record<string, unknown>).map(([subKey, subVal]) => (
-                      <div key={subKey} className="hud-metric" style={{ paddingLeft: "12px" }}>
-                        <span className="hud-metric-label">{formatLabel(subKey)}</span>
-                        <span className={`hud-metric-value ${valueClass(subVal)}`}>
-                          {formatValue(subVal)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
+            {/* Gauges */}
+            <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "8px" }}>
+              <CircularGauge value={vitals.cpu_percent} label="CPU" color={vitals.cpu_percent > 80 ? "#ff0044" : vitals.cpu_percent > 60 ? "#ffaa00" : "#00ff88"} />
+              <CircularGauge value={vitals.memory_percent} label="MEM" color={vitals.memory_percent > 80 ? "#ff0044" : vitals.memory_percent > 60 ? "#ffaa00" : "#00ff88"} />
+              <CircularGauge value={vitals.disk_percent} label="DISK" color={vitals.disk_percent > 80 ? "#ff0044" : vitals.disk_percent > 60 ? "#ffaa00" : "#00ff88"} />
             </div>
+
+            {/* Agent heartbeat grid */}
+            <div style={{ marginBottom: "8px" }}>
+              <div style={{ fontSize: "9px", color: "#7a8ba0", fontFamily: "var(--font-mono)", marginBottom: "4px" }}>AGENT HEARTBEATS</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "3px" }}>
+                {Object.entries(vitals.agent_heartbeats).map(([name, state]) => (
+                  <div
+                    key={name}
+                    title={name}
+                    style={{
+                      width: "100%",
+                      aspectRatio: "1",
+                      borderRadius: "50%",
+                      background: state === "green" ? "#00ff88" : state === "yellow" ? "#ffaa00" : "#ff0044",
+                      boxShadow: `0 0 4px ${state === "green" ? "rgba(0,255,136,0.5)" : state === "yellow" ? "rgba(255,170,0,0.5)" : "rgba(255,0,68,0.5)"}`,
+                      maxWidth: "12px",
+                      maxHeight: "12px",
+                      margin: "0 auto",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* WebSocket quality */}
+            <div className="hud-metric">
+              <span className="hud-metric-label">WS Quality</span>
+              <span className={`hud-metric-value ${vitals.websocket_quality === "excellent" ? "hud-metric-value--positive" : ""}`}>
+                {vitals.websocket_quality.toUpperCase()} ({vitals.websocket_latency_ms.toFixed(0)}ms)
+              </span>
+            </div>
+
+            {/* Connections */}
+            <div className="hud-metric">
+              <span className="hud-metric-label">Connections</span>
+              <span className="hud-metric-value">{vitals.active_connections}</span>
+            </div>
+
+            {/* Req/min */}
+            <div className="hud-metric">
+              <span className="hud-metric-label">Req/min</span>
+              <span className="hud-metric-value">{vitals.requests_per_minute.toFixed(0)}</span>
+            </div>
+
+            {/* Last error */}
+            {vitals.last_error && (
+              <div style={{
+                marginTop: "6px",
+                padding: "4px 6px",
+                background: "rgba(255,0,68,0.1)",
+                border: "1px solid rgba(255,0,68,0.3)",
+                borderRadius: "3px",
+                fontSize: "10px",
+                fontFamily: "var(--font-mono)",
+                color: "#ff6688",
+              }}>
+                ⚠ {vitals.last_error.message}
+              </div>
+            )}
           </>
         ) : (
           <div className="hud-metric"><span className="hud-metric-label">Loading...</span></div>

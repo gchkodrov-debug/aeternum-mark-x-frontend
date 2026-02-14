@@ -18,10 +18,23 @@ import RiskDashPanel from "@/components/panels/RiskDashPanel";
 import ExecutionPanel from "@/components/panels/ExecutionPanel";
 import SignalPanel from "@/components/panels/SignalPanel";
 import CapitalPanel from "@/components/panels/CapitalPanel";
+import TimelinePanel from "@/components/panels/TimelinePanel";
+import CandlestickChart from "@/components/charts/CandlestickChart";
+import DepthChart from "@/components/charts/DepthChart";
+import MiniChart from "@/components/charts/MiniChart";
 
 export default function HudGrid() {
   return (
     <div className="hud-grid">
+      {/* Row 0: Live Charts */}
+      <div className="hud-grid-section">
+        <div className="hud-grid-section-label">LIVE CHARTS</div>
+        <div className="hud-grid-row hud-grid-row--charts">
+          <CandlestickChart symbol="SPY" />
+          <DepthChart symbol="SPY" />
+        </div>
+      </div>
+
       {/* Row 1: Core Intelligence */}
       <div className="hud-grid-section">
         <div className="hud-grid-section-label">CORE INTELLIGENCE</div>
@@ -62,13 +75,27 @@ export default function HudGrid() {
         </div>
       </div>
 
-      {/* Row 5: External Data */}
+      {/* Row 5: External Data with MiniCharts */}
       <div className="hud-grid-section">
         <div className="hud-grid-section-label">EXTERNAL DATA</div>
         <div className="hud-grid-row">
-          <NewsPanel />
-          <ForexMacroPanel />
-          <CryptoPanel />
+          <div className="hud-panel-with-mini">
+            <NewsPanel />
+          </div>
+          <div className="hud-panel-with-mini">
+            <ForexMacroPanel />
+            <div className="hud-mini-chart-row">
+              <MiniChart symbol="EUR/USD" />
+              <MiniChart symbol="GBP/USD" />
+            </div>
+          </div>
+          <div className="hud-panel-with-mini">
+            <CryptoPanel />
+            <div className="hud-mini-chart-row">
+              <MiniChart symbol="BTC" />
+              <MiniChart symbol="ETH" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -76,9 +103,23 @@ export default function HudGrid() {
       <div className="hud-grid-section">
         <div className="hud-grid-section-label">PERFORMANCE &amp; CAPITAL</div>
         <div className="hud-grid-row">
-          <PerformancePanel />
+          <div className="hud-panel-with-mini">
+            <PerformancePanel />
+            <div className="hud-mini-chart-row">
+              <MiniChart symbol="SPY" />
+              <MiniChart symbol="QQQ" />
+            </div>
+          </div>
           <CapitalPanel />
           <OrganismPanel />
+        </div>
+      </div>
+
+      {/* Row 7: Timeline (full width) */}
+      <div className="hud-grid-section">
+        <div className="hud-grid-section-label">CHALLENGE TIMELINE</div>
+        <div className="hud-grid-row">
+          <TimelinePanel />
         </div>
       </div>
     </div>
