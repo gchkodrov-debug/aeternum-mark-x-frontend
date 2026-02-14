@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
@@ -37,6 +37,7 @@ export interface PreflightCheck {
 export interface PreflightResult {
   go: boolean;
   status: string;
+  blockers: string[];
   checks: PreflightCheck[];
   summary: {
     total: number;
@@ -52,6 +53,59 @@ export interface PreflightResult {
   api_keys_total: number;
 }
 
+export interface LiveGateResult {
+  allowed: boolean;
+  blockers: string[];
+  mode: "LIVE" | "SIMULATION";
+  message: string;
+}
+
+export interface BackupListResult {
+  backups: string[];
+}
+
+/* ── useBackendReachable ────────────────────────────────────────────────── */
+
+/**
+ * Checks whether the backend is reachable on mount and exposes the result.
+ * Uses GET /api/aeternum/preflight with a 5 s timeout.
+ */
+export function useBackendReachable() {
+  const [reachable, setReachable] = useState<boolean | null>(null);
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  const check = useCallback(async () => {
+    setChecking(true);
+    const start = performance.now();
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(`${API_BASE}/api/aeternum/health`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      const elapsed = Math.round(performance.now() - start);
+      setLatencyMs(elapsed);
+      setReachable(res.ok);
+    } catch {
+      setReachable(false);
+      setLatencyMs(null);
+    } finally {
+      setChecking(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    check();
+    // Re-check every 30 s
+    const id = setInterval(check, 30000);
+    return () => clearInterval(id);
+  }, [check]);
+
+  return { reachable, latencyMs, checking, recheck: check };
+}
+
 /* ── useApiKeysStatus ───────────────────────────────────────────────────── */
 
 export function useApiKeysStatus(autoRefreshMs = 30000) {
@@ -61,13 +115,24 @@ export function useApiKeysStatus(autoRefreshMs = 30000) {
 
   const fetch_ = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/aeternum/keys/status`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(`${API_BASE}/api/aeternum/keys/status`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);
       setError(null);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Unknown error");
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setError(`Cannot connect to backend at ${API_BASE} (timeout)`);
+      } else if (e instanceof TypeError) {
+        setError(`Cannot connect to backend at ${API_BASE} (network error)`);
+      } else {
+        setError(e instanceof Error ? e.message : "Unknown error");
+      }
     } finally {
       setLoading(false);
     }
@@ -102,7 +167,12 @@ export function useSetKey() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
+      const msg =
+        e instanceof TypeError
+          ? `Cannot connect to backend at ${API_BASE}`
+          : e instanceof Error
+            ? e.message
+            : "Unknown error";
       setError(msg);
       throw e;
     } finally {
@@ -131,7 +201,12 @@ export function useDeleteKey() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
+      const msg =
+        e instanceof TypeError
+          ? `Cannot connect to backend at ${API_BASE}`
+          : e instanceof Error
+            ? e.message
+            : "Unknown error";
       setError(msg);
       throw e;
     } finally {
@@ -153,7 +228,7 @@ export function useTestKey() {
     try {
       const res = await fetch(
         `${API_BASE}/api/aeternum/keys/test/${service}`,
-        { method: "POST" }
+        { method: "POST" },
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
@@ -214,7 +289,12 @@ export function usePreflight() {
       setResult(json);
       return json;
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
+      const msg =
+        e instanceof TypeError
+          ? `Cannot connect to backend at ${API_BASE}`
+          : e instanceof Error
+            ? e.message
+            : "Unknown error";
       setError(msg);
       return null;
     } finally {
@@ -224,3 +304,42 @@ export function usePreflight() {
 
   return { run, loading, result, error };
 }
+
+/* ── useLiveGate ────────────────────────────────────────────────────────── */
+
+export function useLiveGate() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<LiveGateResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const check = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/aeternum/preflight/live-gate`,
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setResult(json);
+      return json;
+    } catch (e: unknown) {
+      const msg =
+        e instanceof TypeError
+          ? `Cannot connect to backend at ${API_BASE}`
+          : e instanceof Error
+            ? e.message
+            : "Unknown error";
+      setError(msg);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { check, loading, result, error };
+}
+
+/* ── Exported constant for other components ─────────────────────────────── */
+
+export { API_BASE };

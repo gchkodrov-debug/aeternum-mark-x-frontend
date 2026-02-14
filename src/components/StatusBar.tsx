@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+import { useBackendReachable, API_BASE } from "@/hooks/useApiKeys";
 
 interface CategoryStatus {
   category: string;
@@ -30,14 +29,52 @@ const CATEGORY_LABELS: Record<string, string> = {
   execution: "EXEC",
 };
 
+/** Extract just the hostname from the API_BASE URL. */
+function getMaskedBackendUrl(): string {
+  try {
+    const url = new URL(API_BASE);
+    return url.hostname;
+  } catch {
+    return API_BASE;
+  }
+}
+
+/** Determine if we are running against a local dev backend. */
+function isLocalDev(): boolean {
+  try {
+    const url = new URL(API_BASE);
+    return (
+      url.hostname === "localhost" ||
+      url.hostname === "127.0.0.1" ||
+      url.hostname === "0.0.0.0"
+    );
+  } catch {
+    return true;
+  }
+}
+
+/** Latency quality label + color. */
+function latencyIndicator(ms: number | null): { label: string; color: string } {
+  if (ms === null) return { label: "--", color: "var(--accent-danger, #ff4444)" };
+  if (ms < 100) return { label: `${ms}ms`, color: "var(--accent-secondary, #00ff00)" };
+  if (ms < 300) return { label: `${ms}ms`, color: "var(--accent-warning, #ffaa00)" };
+  return { label: `${ms}ms`, color: "var(--accent-danger, #ff4444)" };
+}
+
 export default function StatusBar() {
   const [data, setData] = useState<StatusData | null>(null);
   const [uptime, setUptime] = useState(0);
   const startRef = useRef(Date.now());
+  const { reachable, latencyMs } = useBackendReachable();
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/aeternum/keys/status`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(`${API_BASE}/api/aeternum/keys/status`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
       if (!res.ok) {
         setData({
           categories: [],
@@ -50,7 +87,10 @@ export default function StatusBar() {
       const keys = await res.json();
 
       // Group by category
-      const catMap: Record<string, { configured: number; connected: number; total: number }> = {};
+      const catMap: Record<
+        string,
+        { configured: number; connected: number; total: number }
+      > = {};
       for (const k of keys) {
         if (!catMap[k.category]) {
           catMap[k.category] = { configured: 0, connected: 0, total: 0 };
@@ -65,15 +105,15 @@ export default function StatusBar() {
           category: cat,
           label: CATEGORY_LABELS[cat] || cat.toUpperCase(),
           ...v,
-        })
+        }),
       );
 
       const totalConfigured = keys.filter(
-        (k: { is_configured: boolean }) => k.is_configured
+        (k: { is_configured: boolean }) => k.is_configured,
       ).length;
       const hasExecution = keys.some(
         (k: { category: string; is_configured: boolean }) =>
-          k.category === "execution" && k.is_configured
+          k.category === "execution" && k.is_configured,
       );
 
       let overallStatus: "ARMED" | "DEGRADED" | "OFFLINE" = "OFFLINE";
@@ -132,13 +172,69 @@ export default function StatusBar() {
         ? "var(--accent-warning)"
         : "var(--accent-danger)";
 
+  const localDev = isLocalDev();
+  const maskedUrl = getMaskedBackendUrl();
+  const latency = latencyIndicator(latencyMs);
+
   return (
     <div className="status-bar">
       <div className="status-bar__left">
         <span className="status-bar__logo">AETERNUM</span>
         <span className="status-bar__divider">|</span>
+
+        {/* Deployment mode badge */}
+        <span
+          className="status-bar__deploy-badge"
+          style={{
+            fontSize: "0.6rem",
+            padding: "1px 6px",
+            borderRadius: "3px",
+            fontWeight: 700,
+            letterSpacing: "0.05em",
+            background: localDev
+              ? "rgba(0, 255, 255, 0.12)"
+              : "rgba(0, 255, 0, 0.12)",
+            color: localDev
+              ? "var(--accent-primary, #00ffff)"
+              : "var(--accent-secondary, #00ff00)",
+            border: `1px solid ${localDev ? "var(--accent-primary, #00ffff)" : "var(--accent-secondary, #00ff00)"}`,
+          }}
+        >
+          {localDev ? "LOCAL DEV" : "PRODUCTION"}
+        </span>
+
+        {/* Backend URL (masked) */}
+        <span
+          style={{
+            fontSize: "0.6rem",
+            color: "var(--text-secondary, #666)",
+            marginLeft: "4px",
+          }}
+        >
+          {maskedUrl}
+        </span>
+
+        {/* Connection quality */}
+        <span
+          style={{
+            fontSize: "0.6rem",
+            color: latency.color,
+            marginLeft: "4px",
+            fontWeight: 600,
+          }}
+          title={`Backend latency: ${latency.label}`}
+        >
+          {reachable === false ? "\u26A0 OFFLINE" : `\u25CF ${latency.label}`}
+        </span>
+
+        <span className="status-bar__divider">|</span>
+
         {data?.categories.map((cat) => (
-          <span key={cat.category} className="status-bar__dot-group" title={`${cat.label}: ${cat.connected}/${cat.total} connected`}>
+          <span
+            key={cat.category}
+            className="status-bar__dot-group"
+            title={`${cat.label}: ${cat.connected}/${cat.total} connected`}
+          >
             <span
               className="status-bar__dot"
               style={{ backgroundColor: getDotColor(cat) }}
