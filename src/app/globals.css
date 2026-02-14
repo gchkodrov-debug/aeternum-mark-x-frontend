@@ -590,3 +590,266 @@ html, body {
   .ring-inner { top: 20px; left: 20px; right: 20px; bottom: 20px; }
   .avatar-core { top: 30px; left: 30px; right: 30px; bottom: 30px; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   AGENT PANEL & MICROPHONE STYLES
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Agent Panel ─────────────────────────────────────── */
+.agent-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+  padding: 10px 12px;
+}
+
+.agent-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: rgba(0, 195, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+}
+
+.agent-card:hover {
+  background: rgba(0, 195, 255, 0.1);
+  border-color: var(--accent-dim);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.agent-card:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.agent-card.analyzing {
+  border-color: var(--accent);
+  box-shadow: 0 0 15px var(--accent-glow);
+  animation: pulse 1s infinite;
+}
+
+.agent-card.active { border-left: 3px solid var(--accent-secondary); }
+.agent-card.idle { border-left: 3px solid var(--accent-warning); }
+.agent-card.error { border-left: 3px solid var(--accent-danger); }
+.agent-card.disabled { border-left: 3px solid var(--text-dim); }
+
+.agent-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-name {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.agent-signal {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-confidence-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* ── Status Dots ─────────────────────────────────────── */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.status-dot.active {
+  background: var(--accent-secondary);
+  box-shadow: 0 0 6px var(--accent-secondary);
+}
+
+.status-dot.idle {
+  background: var(--accent-warning);
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+}
+
+.status-dot.error {
+  background: var(--accent-danger);
+  box-shadow: 0 0 6px rgba(255, 51, 85, 0.4);
+  animation: pulse 1.5s infinite;
+}
+
+.status-dot.disabled {
+  background: var(--text-dim);
+}
+
+/* Inline status dot for left panel agent core */
+.status-dot-inline {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.status-dot-inline.active {
+  background: var(--accent-secondary);
+  box-shadow: 0 0 4px var(--accent-secondary);
+}
+
+.status-dot-inline.idle {
+  background: var(--accent-warning);
+  box-shadow: 0 0 4px rgba(255, 170, 0, 0.4);
+}
+
+.status-dot-inline.error {
+  background: var(--accent-danger);
+  box-shadow: 0 0 4px rgba(255, 51, 85, 0.4);
+}
+
+.status-dot-inline.disabled {
+  background: var(--text-dim);
+}
+
+/* ── Confidence Bar ──────────────────────────────────── */
+.confidence-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+
+/* ── Agent Core Section (Left Panel) ─────────────────── */
+.agent-core-section .status-row {
+  padding: 5px 0;
+}
+
+.agent-core-value {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+}
+
+.agent-core-value.agent-active { color: var(--accent-secondary); }
+.agent-core-value.agent-idle { color: var(--accent-warning); }
+.agent-core-value.agent-error { color: var(--accent-danger); }
+.agent-core-value.agent-disabled { color: var(--text-dim); }
+
+/* ── Agent Analysis Result ───────────────────────────── */
+.agent-result {
+  border-top: 1px solid var(--border-color);
+  margin: 0;
+}
+
+.agent-result-header {
+  padding: 8px 12px;
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent);
+  background: rgba(0, 195, 255, 0.03);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.agent-result-body {
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  background: transparent;
+}
+
+/* ── Agent Action Buttons ────────────────────────────── */
+.agent-action-btn {
+  border-left: 3px solid var(--accent) !important;
+}
+
+/* ── Microphone Recording Indicator ──────────────────── */
+.mic-active {
+  position: relative;
+  background: rgba(255, 51, 85, 0.2) !important;
+  border-color: var(--accent-danger) !important;
+  color: var(--accent-danger) !important;
+}
+
+.mic-btn.processing {
+  background: rgba(255, 170, 0, 0.15);
+  border-color: var(--accent-warning);
+  color: var(--accent-warning);
+  animation: pulse 1.5s infinite;
+}
+
+.mic-pulse-ring {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 6px;
+  border: 2px solid var(--accent-danger);
+  animation: mic-pulse 1.2s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes mic-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+/* ── Responsive: hide agent panel on small screens ───── */
+@media (max-width: 768px) {
+  .agent-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

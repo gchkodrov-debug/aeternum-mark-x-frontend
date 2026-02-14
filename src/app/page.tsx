@@ -1,11 +1,15 @@
 "use client";
 
+import { useCallback } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useAudio } from "@/hooks/useAudio";
+import { useAgents } from "@/hooks/useAgents";
+import { useMicrophone } from "@/hooks/useMicrophone";
 import TopBar from "@/components/TopBar";
 import SideHudLeft from "@/components/SideHudLeft";
 import SideHudRight from "@/components/SideHudRight";
 import Avatar from "@/components/Avatar";
+import AgentPanel from "@/components/AgentPanel";
 import ChatPanel from "@/components/ChatPanel";
 import BottomStrip from "@/components/BottomStrip";
 
@@ -31,6 +35,38 @@ export default function Home() {
   // Initialize audio playback hook
   useAudio();
 
+  // Agent management hook
+  const { agents, analyzeAgent } = useAgents();
+
+  // Microphone recording hook
+  const { micState, startRecording, stopRecording } = useMicrophone();
+
+  // Toggle mic recording
+  const handleMicToggle = useCallback(() => {
+    if (micState === "recording") {
+      stopRecording();
+    } else if (micState === "idle") {
+      startRecording();
+    }
+  }, [micState, startRecording, stopRecording]);
+
+  // Analyze agent handler for AgentPanel (returns full result)
+  const handleAgentAnalyze = useCallback(
+    async (name: string): Promise<Record<string, unknown> | null> => {
+      const result = await analyzeAgent(name);
+      return result as Record<string, unknown> | null;
+    },
+    [analyzeAgent]
+  );
+
+  // Quick agent analyze for SideHudRight (fire-and-forget)
+  const handleQuickAgentAnalyze = useCallback(
+    (name: string) => {
+      analyzeAgent(name);
+    },
+    [analyzeAgent]
+  );
+
   return (
     <>
       <div className="scanlines" />
@@ -41,21 +77,30 @@ export default function Home() {
           <SideHudLeft
             systemStatus={systemStatus}
             actionLog={actionLog}
+            agents={agents}
           />
 
           <div className="center-panel">
             <Avatar avatarState={avatarState} />
+            <AgentPanel
+              agents={agents}
+              onAnalyze={handleAgentAnalyze}
+            />
             <ChatPanel
               messages={messages}
               streamingText={streamingText}
               isStreaming={isStreaming}
               onSend={sendMessage}
+              onMicToggle={handleMicToggle}
+              micActive={micState === "recording"}
+              micState={micState}
             />
           </div>
 
           <SideHudRight
             notifications={notifications}
             onQuickAction={sendQuickAction}
+            onAgentAnalyze={handleQuickAgentAnalyze}
           />
         </main>
 

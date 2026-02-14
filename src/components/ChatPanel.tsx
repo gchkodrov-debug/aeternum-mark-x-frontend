@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { ChatMessage } from "@/hooks/useWebSocket";
+import type { MicState } from "@/hooks/useMicrophone";
 import StatusLine from "./StatusLine";
 import CommandInput from "./CommandInput";
 
@@ -12,6 +13,7 @@ interface ChatPanelProps {
   onSend: (text: string) => void;
   onMicToggle?: () => void;
   micActive?: boolean;
+  micState?: MicState;
 }
 
 const ROLE_PREFIX: Record<string, string> = {
@@ -27,6 +29,7 @@ export default function ChatPanel({
   onSend,
   onMicToggle,
   micActive,
+  micState,
 }: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +64,7 @@ export default function ChatPanel({
         onSend={onSend}
         onMicToggle={onMicToggle}
         micActive={micActive}
+        micState={micState}
       />
     </div>
   );

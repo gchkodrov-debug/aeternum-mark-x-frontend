@@ -2,17 +2,20 @@
 
 import { useState, useCallback, type KeyboardEvent } from "react";
 import { sanitizeInput } from "@/utils/sanitize";
+import type { MicState } from "@/hooks/useMicrophone";
 
 interface CommandInputProps {
   onSend: (text: string) => void;
   onMicToggle?: () => void;
   micActive?: boolean;
+  micState?: MicState;
 }
 
 export default function CommandInput({
   onSend,
   onMicToggle,
   micActive = false,
+  micState = "idle",
 }: CommandInputProps) {
   const [value, setValue] = useState("");
 
@@ -34,22 +37,27 @@ export default function CommandInput({
     [handleSend]
   );
 
+  const isRecording = micActive || micState === "recording";
+  const isProcessing = micState === "processing";
+
   return (
     <div className="chat-input-container">
       <input
         type="text"
         className="chat-input"
-        placeholder="Enter command..."
+        placeholder={isRecording ? "Listening..." : isProcessing ? "Processing..." : "Enter command..."}
         autoComplete="off"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         maxLength={5000}
+        disabled={isRecording}
       />
       <button
         className="send-btn"
         title="Send"
         onClick={handleSend}
+        disabled={isRecording}
       >
         <svg
           width="20"
@@ -63,10 +71,11 @@ export default function CommandInput({
         </svg>
       </button>
       <button
-        className={`mic-btn${micActive ? " active" : ""}`}
-        title="Push to Talk"
+        className={`mic-btn${isRecording ? " active mic-active" : ""}${isProcessing ? " processing" : ""}`}
+        title={isRecording ? "Stop Recording" : "Push to Talk"}
         onClick={onMicToggle}
       >
+        {isRecording && <span className="mic-pulse-ring" />}
         <svg
           width="20"
           height="20"

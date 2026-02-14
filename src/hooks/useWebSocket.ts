@@ -216,6 +216,12 @@ export function useWebSocket() {
           setClientCount((data.clients as number) || 0);
           break;
 
+        case "AGENT_UPDATE":
+          window.dispatchEvent(
+            new CustomEvent("aeternum-agent-update", { detail: data })
+          );
+          break;
+
         default:
           console.log("Unknown message type:", data.type, data);
       }
